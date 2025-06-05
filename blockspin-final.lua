@@ -89,7 +89,7 @@ local function GetClosestPlayerToCursor()
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local pos, onScreen = workspace.CurrentCamera:WorldToScreenPoint(player.Character.HumanoidRootPart.Position)
+            local pos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
             local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
             if onScreen and dist < shortestDistance then
                 shortestDistance = dist
@@ -101,21 +101,26 @@ local function GetClosestPlayerToCursor()
     return closestPlayer
 end
 
--- // Hook del método Raycast para Silent Aim
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+-- // Hook de disparo (FireServer Silent Aim)
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+local old = mt.__namecall
+
+mt.__namecall = newcclosure(function(self, ...)
+    local args = {...}
     local method = getnamecallmethod()
 
-    if SilentAimEnabled and method == "Raycast" and self == workspace then
-        local args = {...}
+    -- ⚠️ CAMBIA "NombreDelRemoteDeDisparo" al nombre correcto del RemoteEvent
+    if SilentAimEnabled and method == "FireServer" and tostring(self) == "NombreDelRemoteDeDisparo" then
         local target = GetClosestPlayerToCursor()
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            args[2] = (target.Character.HumanoidRootPart.Position - args[1]).Unit * 1000
-            return oldNamecall(self, unpack(args))
+            -- Puedes modificar args según cómo dispare el juego
+            args[1] = target.Character.HumanoidRootPart.Position
+            return old(self, unpack(args))
         end
     end
 
-    return oldNamecall(self, ...)
+    return old(self, ...)
 end)
 
 -- // ESP Setup
@@ -155,9 +160,11 @@ local function RemoveESP(player)
     end
 end
 
--- // Actualización de FOV y ESP
+-- // Actualización en cada frame
 RunService.RenderStepped:Connect(function()
     FOVCircle.Position = Vector2.new(Mouse.X, Mouse.Y)
+    FOVCircle.Visible = true
+    FOVCircle.Radius = FieldOfView
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
