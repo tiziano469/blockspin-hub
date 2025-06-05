@@ -1,65 +1,66 @@
--- ✅ BlockSpin PvP Móvil: ESP + Armas + Silent Aim + FOV
--- Creado por ChatGPT | Libre uso
+-- Auto ATM Farmer para BlockSpin con GUI
+-- Autor: ChatGPT
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
-local UIS = game:GetService("UserInputService")
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "BlockSpinMobileGUI"
+-- Variables
+local autoFarm = false
+local waitTime = 2 -- tiempo entre acciones
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
 
-local espEnabled = false
-local silentAimEnabled = false
-local autoEquipWeapons = false
+-- Crear GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "ATMGui"
+gui.ResetOnSpawn = false
+gui.Parent = game.CoreGui
 
--- 🧠 ESP
-local function createESP(player)
-    if not player.Character then return end
-    local head = player.Character:FindFirstChild("Head")
-    if head then
-        if head:FindFirstChild("ESP") then
-            head.ESP:Destroy()
-        end
-        local esp = Instance.new("BillboardGui", head)
-        esp.Name = "ESP"
-        esp.Size = UDim2.new(0, 100, 0, 40)
-        esp.StudsOffset = Vector3.new(0, 3, 0)
-        esp.AlwaysOnTop = true
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 150, 0, 50)
+button.Position = UDim2.new(0, 20, 0, 100)
+button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.GothamBold
+button.TextSize = 16
+button.Text = "AutoFarm ATM: OFF"
+button.Parent = gui
+button.BorderSizePixel = 0
+button.BackgroundTransparency = 0.1
 
-        local label = Instance.new("TextLabel", esp)
-        label.Size = UDim2.new(1, 0, 1, 0)
-        label.BackgroundTransparency = 1
-        label.Text = player.Name
-        label.TextColor3 = Color3.fromRGB(0, 255, 100)
-        label.TextScaled = true
-    end
-end
+-- Función para buscar y farmear ATMs
+function farmATM()
+    while wait(waitTime) do
+        if not autoFarm then break end
 
-local function enableESP()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            createESP(player)
-            player.CharacterAdded:Connect(function()
-                task.wait(1)
-                createESP(player)
-            end)
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("Model") and obj:FindFirstChild("ATM") then
+                local atmPart = obj:FindFirstChild("ATM")
+                if atmPart and atmPart:IsA("BasePart") then
+                    hrp.CFrame = atmPart.CFrame + Vector3.new(0, 2, 0)
+                    wait(0.5)
+                    local prompt = atmPart:FindFirstChildOfClass("ProximityPrompt")
+                    if prompt and fireproximityprompt then
+                        fireproximityprompt(prompt)
+                    end
+                    wait(1.5)
+                end
+            end
         end
     end
 end
 
--- 🎯 Silent Aim + FOV + Amigos
-local FOV_RADIUS = 120
-local Friends = {
-    ["NombreAmigo1"] = true,
-    ["NombreAmigo2"] = true,
-}
+-- Alternar AutoFarm
+button.MouseButton1Click:Connect(function()
+    autoFarm = not autoFarm
+    button.Text = autoFarm and "AutoFarm ATM: ON" or "AutoFarm ATM: OFF"
+    button.BackgroundColor3 = autoFarm and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(30, 30, 30)
+    if autoFarm then
+        task.spawn(farmATM)
+    end
+end)
 
--- Dibujar círculo FOV
-local fovCircle = Drawing.new("Circle")
-fovCircle.Color = Color3.fromRGB(0, 255, 0)
-fovCircle.Thickness = 2
-fovCircle.Radius = FOV_RADIUS
-fovCircle.Filled =
+-- Seguridad
+if not fireproximityprompt then
+    warn("Tu ejecutor no soporta 'fireproximityprompt'.")
+    button.Text = "Ejecutor no soportado"
+    button.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+end
