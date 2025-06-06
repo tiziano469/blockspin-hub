@@ -1,6 +1,6 @@
 local DiscordLib = loadstring(game:HttpGet"https://pastebin.com/raw/KRf0xDXQ")()
 local Win1 = DiscordLib:Window("Aimbot R6 | V1 | HUB | TIZI MODS") 
-local Tab1 = Win1:Server("TIZI MODS", "") 
+local Tab1 = Win1:Server("TIZI MODS.", "") 
 -- Aimbot 50% Bugs
 local aimbotSettings = {
     enabled = false, 
