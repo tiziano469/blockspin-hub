@@ -1,76 +1,42 @@
--- ESP para Delta: muestra armas equipadas y de mochila
+-- Aimbot básico para BlockSpin
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local localPlayer = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
-local function createESP(player)
-    if player == localPlayer then return end
+-- Configuración
+local FOV_RADIUS = 150 -- Radio del área de detección del aimbot
+local aimbotEnabled = true
 
-    local function onCharacterAdded(char)
-        local head = char:WaitForChild("Head", 5)
-        if not head then return end
+-- Función para obtener el enemigo más cercano al mouse
+local function getClosestEnemy()
+    local closestEnemy = nil
+    local shortestDistance = FOV_RADIUS
 
-        if head:FindFirstChild("ESP_TAG") then return end
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            local headPos = player.Character.Head.Position
+            local screenPoint, onScreen = Camera:WorldToViewportPoint(headPos)
 
-        local esp = Instance.new("BillboardGui")
-        esp.Name = "ESP_TAG"
-        esp.Size = UDim2.new(0, 150, 0, 20)
-        esp.Adornee = head
-        esp.AlwaysOnTop = true
-        esp.StudsOffset = Vector3.new(0, 2.8, 0)
-        esp.Parent = head
-
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, 0, 1, 0)
-        label.BackgroundTransparency = 1
-        label.TextColor3 = Color3.fromRGB(0, 255, 0)
-        label.TextStrokeTransparency = 0.5
-        label.Font = Enum.Font.SourceSansBold
-        label.TextScaled = true
-        label.Text = "Cargando..."
-        label.Parent = esp
-
-        RunService.RenderStepped:Connect(function()
-            if not player.Character then return end
-
-            local weaponEquipped = nil
-            for _, item in ipairs(player.Character:GetChildren()) do
-                if item:IsA("Tool") then
-                    weaponEquipped = item.Name
-                    break
+            if onScreen then
+                local distance = (Vector2.new(screenPoint.X, screenPoint.Y) - Vector2.new(mouse.X, mouse.Y)).magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closestEnemy = player
                 end
             end
-
-            local weaponBackpack = nil
-            local backpack = player:FindFirstChild("Backpack")
-            if backpack then
-                for _, item in ipairs(backpack:GetChildren()) do
-                    if item:IsA("Tool") then
-                        weaponBackpack = item.Name
-                        break
-                    end
-                end
-            end
-
-            local text = player.Name
-            if weaponEquipped then
-                text = text .. " [Usa: " .. weaponEquipped .. "]"
-            elseif weaponBackpack then
-                text = text .. " [Tiene: " .. weaponBackpack .. "]"
-            else
-                text = text .. " [Sin arma]"
-            end
-
-            label.Text = text
-        end)
+        end
     end
 
-    player.CharacterAdded:Connect(onCharacterAdded)
-    if player.Character then onCharacterAdded(player.Character) end
+    return closestEnemy
 end
 
-for _, player in ipairs(Players:GetPlayers()) do
-    createESP(player)
-end
-
-Players.PlayerAdded:Connect(createESP)
+-- Bucle para apuntar
+RunService.RenderStepped:Connect(function()
+    if aimbotEnabled then
+        local target = getClosestEnemy()
+        if target and target.Character and target.Character:FindFirstChild("Head") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+        end
+    end
+end)
