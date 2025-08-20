@@ -30,7 +30,7 @@ local function createNametagFor(character, player)
     billboard.AlwaysOnTop = true
     billboard.Size = TAG_SIZE
     billboard.StudsOffset = OFFSET
-    billboard.MaxDistance = 200 -- distancia máxima para mostrarse (mejora rendimiento)
+    billboard.MaxDistance = 500 -- distancia máxima para mostrarse (mejora rendimiento)
     billboard.Parent = head
 
     local frame = Instance.new("Frame")
